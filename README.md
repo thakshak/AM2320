@@ -1,4 +1,4 @@
 # AM2320
-aosong am2320 i2c temperature and humidity sensor arduino library.
-just implemented basic temperature and humidity reading.
+AOSONG AM2320 i2c temperature and humidity sensor arduino library.
+Just, implemented basic temperature and humidity values reading.
 NOTE: user written code should include the wire.h library.
