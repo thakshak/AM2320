@@ -1,4 +1,4 @@
-#include "MyAM2320.h"
+#include "AM2320.h"
 #include <Wire.h>
 // 
 // AM2321 Temperature & Humidity Sensor library for Arduino
