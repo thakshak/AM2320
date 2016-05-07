@@ -71,14 +71,14 @@ float AM2320::getTemperature(void)
 	read_sensor_readings(); 
 	temperature  = data_buffer[4] << 8;
 	temperature += data_buffer[5];
-	return(temperature/10);
+	return(temperature/10.0);
 }
 float AM2320::getHumidity(void)
 {
 	read_sensor_readings(); 
 	humidity     = data_buffer[2] << 8;
 	humidity    += data_buffer[3];
-	return (humidity/10);
+	return (humidity/10.0);
 }
     
 unsigned long AM2320::CRC16(uint8_t *ptr, uint8_t length) 
