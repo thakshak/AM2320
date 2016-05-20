@@ -2,117 +2,59 @@
 #include <Wire.h>
 // 
 // AM2321 Temperature & Humidity Sensor library for Arduino
-//
-// The MIT License (MIT)
-//
-// Copyright (c) 2015 THAKSHAK GUDIMETLA
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-//
+// Сделана Тимофеевым Е.Н. из AM2320-master
 
-AM2320::AM2320() 
+unsigned int CRC16(byte *ptr, byte length) 
 { 
-     unsigned char s = 0; 
-     for(s = 0; s< 8; s++) 
-     { 
-           data_buffer[s] = 0x00; 
-     }                
-}              
-
-void AM2320::read_sensor_readings()
-{
-	AM2320();
-	Wire.begin();
-	int len = 2+ AM2320_read_count +2;// COMMAND + DATA + REGCOUNT + CRCLSB + CRCMSB
-	Wire.beginTransmission(AM2320_address);
-	//delayMicroseconds(2000); //>1.5ms
-	Wire.endTransmission();
-	delayMicroseconds(2000); //>1.5ms
-	//
-	// Read Command
-	//
-	Wire.beginTransmission(AM2320_address);
-	Wire.write(AM2320_read_sensor_data);
-	Wire.write(AM2320_RH_hb);
-	Wire.write(AM2320_read_count);
-	Wire.endTransmission();
-	//
-	// Waiting
-	//
-	delayMicroseconds(1600); //>1.5ms
-	//
-	// Read
-	//
-	Wire.requestFrom(AM2320_address, len); 
-	for (int i = 0; i < len; i++)
-	{
-	  data_buffer[i] = Wire.read();
-	  delayMicroseconds(1600); //>1.5ms
-	}
-}
-float AM2320::getTemperature(void)
-{
-	read_sensor_readings(); 
-	temperature  = data_buffer[4] << 8;
-	temperature += data_buffer[5];
-	return(temperature/10);
-}
-float AM2320::getHumidity(void)
-{
-	read_sensor_readings(); 
-	humidity     = data_buffer[2] << 8;
-	humidity    += data_buffer[3];
-	return (humidity/10);
-}
-    
-unsigned long AM2320::CRC16(uint8_t *ptr, uint8_t length) 
-{ 
-      unsigned long crc = 0xFFFF; 
+      unsigned int crc = 0xFFFF; 
       uint8_t s = 0x00; 
 
-      while(length--) 
-      { 
+      while(length--) {
         crc ^= *ptr++; 
-        for(s = 0; s < 8; s++) 
-        { 
-          if((crc & 0x01) != 0) 
-          { 
+        for(s = 0; s < 8; s++) {
+          if((crc & 0x01) != 0) {
             crc >>= 1; 
             crc ^= 0xA001; 
-          } 
-          else 
-          { 
-            crc >>= 1; 
-          } 
+          } else crc >>= 1; 
         } 
       } 
-
       return crc; 
 } 
-bool AM2320::CRCCheck(void)
+
+AM2320::AM2320()
 {
-	read_sensor_readings();
-	unsigned long crc=0;
-	crc  = data_buffer[6] << 8;
-	crc += data_buffer[7];
-	
-	if (crc == CRC16(data_buffer, 8))
-            return true;
-        return false;
+	Wire.begin();
+}
+
+int AM2320::Read()
+{
+	byte buf[8];
+	for(int s = 0; s < 8; s++) buf[s] = 0x00; 
+
+	Wire.beginTransmission(AM2320_address);
+	Wire.endTransmission();
+	// запрос 4 байт (температуры и влажности)
+	Wire.beginTransmission(AM2320_address);
+	Wire.write(0x03);// запрос
+	Wire.write(0x00); // с 0-го адреса
+	Wire.write(0x04); // 4 байта
+	if (Wire.endTransmission(1) != 0) return 1;
+	delayMicroseconds(1600); //>1.5ms
+	// считываем результаты запроса
+	Wire.requestFrom(AM2320_address, 0x08); 
+	for (int i = 0; i < 0x08; i++) buf[i] = Wire.read();
+
+	// CRC check
+	unsigned int Rcrc = buf[7] << 8;
+	Rcrc += buf[6];
+	if (Rcrc == CRC16(buf, 6)) {
+		unsigned int temperature = ((buf[4] & 0x7F) << 8) + buf[5];
+		t = temperature / 10.0;
+		t = ((buf[4] & 0x80) >> 7) == 1 ? t * (-1) : t;
+
+		unsigned int humidity = (buf[2] << 8) + buf[3];
+		h = humidity / 10.0;
+		return 0;
+	}
+        return 2;
 }
