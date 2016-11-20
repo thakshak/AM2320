@@ -23,7 +23,6 @@ unsigned int CRC16(byte *ptr, byte length)
 
 AM2320::AM2320()
 {
-	Wire.begin();
 }
 
 int AM2320::Read()
