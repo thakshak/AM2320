@@ -1,9 +1,11 @@
 #include <Wire.h>
 #include <AM2320.h>
+
 AM2320 th;
 
 void setup() {
   Serial.begin(9600);
+  Wire.begin();
 }
 
 void loop() {
