@@ -4,17 +4,17 @@
 // AM2320 Temperature & Humidity Sensor library for Arduino
 // Modified by Timofeev E.N. from https://github.com/thakshak/AM2320/
 
-unsigned int CRC16(byte * ptr, byte length) {
+unsigned int CRC16(byte *ptr, byte length) {
         unsigned int crc = 0xFFFF;
         uint8_t s = 0x00;
 
         while (length--) {
-                crc ^ = * ptr++;
+                crc ^= *ptr++;
                 for (s = 0; s < 8; s++) {
-                        if ((crc & 0x01) ! = 0) {
-                                crc >> = 1;
-                                crc ^ = 0xA001;
-                        } else crc >> = 1;
+                        if ((crc & 0x01) != 0) {
+                                crc >>= 1;
+                                crc ^= 0xA001;
+                        } else crc >>= 1;
                 }
         }
         return crc;
@@ -33,7 +33,7 @@ int AM2320::Read() {
         Wire.write(0x03); // request
         Wire.write(0x00); // from the 0th address
         Wire.write(0x04); // 4 bytes
-        if (Wire.endTransmission(1) ! = 0) return 1;
+        if (Wire.endTransmission(1) != 0) return 1;
         delayMicroseconds(1600); //>1.5ms
         // read the query results
         Wire.requestFrom(AM2320_address, 0x08);
@@ -41,7 +41,7 @@ int AM2320::Read() {
 
         // CRC check
         unsigned int Rcrc = buf[7] << 8;
-        Rcrc + = buf[6];
+        Rcrc += buf[6];
         if (Rcrc == CRC16(buf, 6)) {
                 unsigned int temperature = ((buf[4] & 0x7F) << 8) + buf[5];
                 t = temperature / 10.0;
